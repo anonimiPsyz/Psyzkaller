@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Junjie-Fan/tfidf"
 	"github.com/google/syzkaller/pkg/corpus"
 	"github.com/google/syzkaller/pkg/flatrpc"
 	"github.com/google/syzkaller/pkg/fuzzer/queue"
@@ -34,6 +35,7 @@ type Fuzzer struct {
 	ctProgs      int
 	ctMu         sync.Mutex // TODO: use RWLock.
 	ctRegenerate chan struct{}
+	callpus      *tfidf.TFIDF
 
 	execQueues
 }
@@ -178,6 +180,8 @@ type Config struct {
 	NoMutateCalls  map[int]bool
 	FetchRawCover  bool
 	NewInputFilter func(call string) bool
+	SuccJsonData   []uint8
+	PsyzFlags      prog.PsyzFlagType
 }
 
 func (fuzzer *Fuzzer) triageProgCall(p *prog.Prog, info *flatrpc.CallInfo, call int, triage *map[int]*triageCall) {
@@ -306,7 +310,9 @@ func (fuzzer *Fuzzer) rand() *rand.Rand {
 }
 
 func (fuzzer *Fuzzer) updateChoiceTable(programs []*prog.Prog) {
-	newCt := fuzzer.target.BuildChoiceTable(programs, fuzzer.Config.EnabledCalls)
+	//newCt := fuzzer.target.BuildChoiceTable(programs, fuzzer.Config.EnabledCalls)
+	var newCallpus *tfidf.TFIDF
+	newCt, newCallpus := fuzzer.target.BuildChoiceTablePsyz(programs, fuzzer.Config.EnabledCalls, fuzzer.Config.SuccJsonData, fuzzer.Config.PsyzFlags)
 
 	fuzzer.ctMu.Lock()
 	defer fuzzer.ctMu.Unlock()
@@ -314,6 +320,7 @@ func (fuzzer *Fuzzer) updateChoiceTable(programs []*prog.Prog) {
 		fuzzer.ctProgs = len(programs)
 		fuzzer.ct = newCt
 	}
+	fuzzer.callpus = newCallpus
 }
 
 func (fuzzer *Fuzzer) choiceTableUpdater() {

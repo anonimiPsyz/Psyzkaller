@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -53,6 +54,13 @@ var (
 	flagConfig = flag.String("config", "", "configuration file")
 	flagDebug  = flag.Bool("debug", false, "dump all VM output to console")
 	flagBench  = flag.String("bench", "", "write execution statistics into this file periodically")
+	flagPsyz   = flag.String("psyzMode", "", "psyzkaller's mode flag :\n"+
+		" N: enable psyzkaller's N-gram optimization.\n"+
+		" T: enable psyzkaller's TFIDF optimization.\n"+
+		" R: enable psyzkaller's random Walk optimization.\n"+
+		" D: enable psyzkaller's DongTing optimization. Need successor_Prope.json in workdir.\n"+
+		" e.g. psyzMode=DN  : means enable DongTing and N-gram optimizations. \n"+
+		" default: no optimization.\n")
 
 	flagMode = flag.String("mode", "fuzzing", "mode of operation, one of:\n"+
 		" - fuzzing: the default continuous fuzzing mode\n"+
@@ -93,6 +101,9 @@ type Manager struct {
 	expertMode      bool
 	modules         []*vminfo.KernelModule
 	coverFilter     map[uint64]struct{} // includes only coverage PCs
+
+	succJsonData []uint8
+	psyzFlags    prog.PsyzFlagType
 
 	dash *dashapi.Dashboard
 	// This is specifically separated from dash, so that we can keep dash = nil when
@@ -504,6 +515,49 @@ func (mgr *Manager) runRepro(crash *Crash) *ReproResult {
 	return ret
 }
 
+func (mgr *Manager) phaseflagPsyz() {
+	if strings.Index(*flagPsyz, "N") != -1 {
+		mgr.psyzFlags |= prog.PsyzNgram
+		log.Logf(0, "Psyzkaller N-gram optimization enabled.")
+	}
+	if strings.Index(*flagPsyz, "T") != -1 {
+		mgr.psyzFlags |= prog.PsyzTFIDF
+		log.Logf(0, "Psyzkaller TF-IDF optimization enabled.")
+	}
+	if strings.Index(*flagPsyz, "R") != -1 {
+		mgr.psyzFlags |= prog.PsyzRandomW
+		log.Logf(0, "Psyzkaller Random Walk optimization enabled.")
+	}
+	if strings.Index(*flagPsyz, "D") != -1 {
+		mgr.psyzFlags |= prog.PsyzDongTing
+		log.Logf(0, "Psyzkaller DongTing optimization enabled.")
+	}
+}
+
+func (mgr *Manager) loadSuccJsonData() {
+	succInforFile := filepath.Join(mgr.cfg.Workdir, "successor_Prope.json")
+	succJsonData, err := os.ReadFile(succInforFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			mgr.succJsonData = nil
+			log.Logf(0, "successor_Prope.json does not exist in the workdir, Psyzkaller DongTing optimization is disabled.")
+			mgr.psyzFlags &= ^prog.PsyzDongTing
+			return
+		} else {
+			log.Fatalf("Error reading file successor_Prope.json: %v", err)
+		}
+	}
+	log.Logf(0, "Reading file successor_Prope.json, len of succJsonData:%d", len(succJsonData))
+	mgr.succJsonData = succJsonData
+
+	infor_obj := make(map[int]map[int]float32)
+	err1 := json.Unmarshal(succJsonData, &infor_obj)
+	if err1 != nil {
+		log.Fatalf("JSON decode failed:", err)
+	}
+	log.Logf(0, "number of elements in succJsonData:%d", len(infor_obj))
+}
+
 func (mgr *Manager) preloadCorpus() {
 	corpusDB, err := db.Open(filepath.Join(mgr.cfg.Workdir, "corpus.db"), true)
 	if err != nil {
@@ -514,6 +568,13 @@ func (mgr *Manager) preloadCorpus() {
 	}
 	mgr.corpusDB = corpusDB
 	mgr.fresh = len(mgr.corpusDB.Records) == 0
+
+	mgr.phaseflagPsyz()
+	if mgr.psyzFlags&prog.PsyzDongTing != 0 {
+		mgr.loadSuccJsonData()
+	}
+	//log.Fatalf("stop for test")
+
 	// By default we don't re-minimize/re-smash programs from corpus,
 	// it takes lots of time on start and is unnecessary.
 	// However, on version bumps we can selectively re-minimize/re-smash.
@@ -1310,6 +1371,8 @@ func (mgr *Manager) MachineChecked(features flatrpc.Feature, enabledSyscalls map
 			EnabledCalls:   enabledSyscalls,
 			NoMutateCalls:  mgr.cfg.NoMutateCalls,
 			FetchRawCover:  mgr.cfg.RawCover,
+			SuccJsonData:   mgr.succJsonData,
+			PsyzFlags:      mgr.psyzFlags,
 			Logf: func(level int, msg string, args ...interface{}) {
 				if level != 0 {
 					return

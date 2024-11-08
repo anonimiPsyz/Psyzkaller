@@ -20,9 +20,15 @@ type job interface {
 }
 
 func genProgRequest(fuzzer *Fuzzer, rnd *rand.Rand) *queue.Request {
-	p := fuzzer.target.Generate(rnd,
+	//p := fuzzer.target.Generate(rnd,
+	//	prog.RecommendedCalls,
+	//	fuzzer.ChoiceTable())
+	p := fuzzer.target.GenerateACT(rnd,
 		prog.RecommendedCalls,
-		fuzzer.ChoiceTable())
+		fuzzer.ChoiceTable(),
+		fuzzer.callpus,
+		fuzzer.Config.PsyzFlags)
+
 	return &queue.Request{
 		Prog:     p,
 		ExecOpts: setFlags(flatrpc.ExecFlagCollectSignal),
