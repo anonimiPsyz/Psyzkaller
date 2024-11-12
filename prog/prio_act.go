@@ -91,6 +91,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 	}
 	if psyzFlags&PsyzTFIDF != 0 {
 		target.CalculatePrioritiesTFIDF(corpus, callpus)
+		//fmt.Printf("CalculatePrioritiesTFIDF: callpus.N:%d\n", callpus.N)
 	}
 
 	// psyzkaller CalculatePrioritiesACT, N-gram and DongTing related code
