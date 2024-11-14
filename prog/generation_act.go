@@ -187,8 +187,8 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 		return x, 0, -1
 
 	} else { //其他位置调用
-		rd := rand.Intn(2)                       //随机数选前面还是后面
-		biasIndex := rand.Intn(len(globalVisit)) //选择bias的下标随机数
+		rd := r.Intn(2)                       //随机数选前面还是后面
+		biasIndex := r.Intn(len(globalVisit)) //选择bias的下标随机数
 		bias := globalVisit[biasIndex]
 		//1选前向
 		if rd == 1 {
@@ -214,8 +214,7 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 }
 
 func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
-	var ret int
-	ret = -1
+	ret := -1
 	var run []int32
 	var id []int
 	for k0, v0 := range prope {
@@ -232,6 +231,8 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int3
 	for i := 1; i < len(run); i++ {
 		run[i] += run[i-1]
 	}
+
+	fmt.Printf("NgramChooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
 	x := int32(r.Intn(int(run[len(run)-1])) + 1)
 	ret = sort.Search(len(run), func(i int) bool {
 		return run[i] >= x
@@ -261,9 +262,11 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 		run[i] += run[i-1]
 	}
 
-	if int(run[len(run)-1]) == 0 { //这是显然存在的情况				//
-		return -1 //
-	} //
+	if int(run[len(run)-1]) <= 0 { //这是显然存在的情况
+		return -1
+	}
+
+	fmt.Printf("chooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
 	x := int32(r.Intn(int(run[len(run)-1])) + 1)
 	res := sort.Search(len(run), func(i int) bool {
 		return run[i] >= x
@@ -288,8 +291,12 @@ func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, 
 		biasID := r.Intn(len(callslice))
 		bias = callslice[biasID]
 	}
-	run := prope[bias]
-	if run == nil {
+	//run := prope[bias]
+	run := make(map[int]float32)
+	for k, v := range prope[bias] {
+		run[k] = v
+	}
+	if len(run) == 0 || run == nil {
 		return -1
 	}
 	for i := 1; i < len(run); i++ {
@@ -372,7 +379,7 @@ func (r *randGen) ChooseOneTFIDF(rs rand.Source, globalVisit []int, ct *ChoiceTa
 		return x, 0, -1
 
 	} else { //其他位置调用
-		rd := rand.Intn(2) //随机数选前面还是后面TODO:maybe need a change!!!!!//20230306更改
+		rd := r.Intn(2) //随机数选前面还是后面TODO:maybe need a change!!!!!//20230306更改
 		var s []string
 		for i := 0; i < len(globalVisit); i++ {
 			s = append(s, strconv.Itoa(globalVisit[i]))
@@ -425,13 +432,10 @@ func chooseIndexFromMap(r *rand.Rand, m map[string]float64, g []int) int {
 	})
 	if res >= len(g) {
 		//first time run chooseIndexFromMap, corpus could be nil, then g[res] could overflow here
-		fmt.Printf("chooseIndexFromMap: index out of range. Length of list: %d. result: %d\n", len(g), res)
-		fmt.Printf("random x: %f\n", x)
-		for i := 0; i < len(g); i++ {
-			fmt.Printf("%d %f\n", g[i], run[i])
-		}
+		// return a random result
+
 		res = int(x * float64(res))
-		fmt.Printf("return random result: %d\n", res)
+		//fmt.Printf("return random result: %d\n", res)
 		//res = len(g) - 1
 	}
 	return res
