@@ -59,8 +59,10 @@ var (
 		" T: enable psyzkaller's TFIDF optimization.\n"+
 		" R: enable psyzkaller's random Walk optimization.\n"+
 		" D: enable psyzkaller's DongTing optimization. Need successor_Prope.json in workdir.\n"+
+		" M: enable psyzkaller's MIX optimization, Psyz will random use RandomW/TFIDF/RandomW + TFIDF/Origin in SCSs generating phase if related Flags are setted.\n"+
 		" e.g. psyzMode=DN  : means enable DongTing and N-gram optimizations. \n"+
 		" default: no optimization.\n")
+	flagDTJson = flag.String("DTJson", "successor_Prope.json", "DongTing pre_analysis result file name. Default successor_Prope.json")
 
 	flagMode = flag.String("mode", "fuzzing", "mode of operation, one of:\n"+
 		" - fuzzing: the default continuous fuzzing mode\n"+
@@ -516,38 +518,50 @@ func (mgr *Manager) runRepro(crash *Crash) *ReproResult {
 }
 
 func (mgr *Manager) phaseflagPsyz() {
+	modStr := ""
 	if strings.Index(*flagPsyz, "N") != -1 {
 		mgr.psyzFlags |= prog.PsyzNgram
-		log.Logf(0, "Psyzkaller N-gram optimization enabled.")
+		modStr += "N-gram "
 	}
 	if strings.Index(*flagPsyz, "T") != -1 {
 		mgr.psyzFlags |= prog.PsyzTFIDF
-		log.Logf(0, "Psyzkaller TF-IDF optimization enabled.")
+		modStr += "TF-IDF "
 	}
 	if strings.Index(*flagPsyz, "R") != -1 {
 		mgr.psyzFlags |= prog.PsyzRandomW
-		log.Logf(0, "Psyzkaller Random Walk optimization enabled.")
+		modStr += "Random_Walk "
 	}
 	if strings.Index(*flagPsyz, "D") != -1 {
 		mgr.psyzFlags |= prog.PsyzDongTing
-		log.Logf(0, "Psyzkaller DongTing optimization enabled.")
+		modStr += "DongTing "
+	}
+	if strings.Index(*flagPsyz, "M") != -1 {
+		mgr.psyzFlags |= prog.PsyzMix
+		modStr += "MixGenerateOpti "
+		mgr.loadSuccJsonData()
+	}
+
+	if modStr == "" {
+		log.Logf(0, "Psyzkaller optimization disabled.")
+	} else {
+		log.Logf(0, "Psyzkaller optimization enabled: %s", modStr)
 	}
 }
 
 func (mgr *Manager) loadSuccJsonData() {
-	succInforFile := filepath.Join(mgr.cfg.Workdir, "successor_Prope.json")
+	succInforFile := filepath.Join(mgr.cfg.Workdir, *flagDTJson)
 	succJsonData, err := os.ReadFile(succInforFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			mgr.succJsonData = nil
-			log.Logf(0, "successor_Prope.json does not exist in the workdir, Psyzkaller DongTing optimization is disabled.")
+			log.Logf(0, "%s does not exist in the workdir, Psyzkaller DongTing optimization is disabled.", *flagDTJson)
 			mgr.psyzFlags &= ^prog.PsyzDongTing
 			return
 		} else {
-			log.Fatalf("Error reading file successor_Prope.json: %v", err)
+			log.Fatalf("Error reading file %s.json: %v", *flagDTJson, err)
 		}
 	}
-	log.Logf(0, "Reading file successor_Prope.json, len of succJsonData:%d", len(succJsonData))
+	log.Logf(0, "Reading file %s, len of succJsonData:%d", *flagDTJson, len(succJsonData))
 	mgr.succJsonData = succJsonData
 
 	infor_obj := make(map[int]map[int]float32)

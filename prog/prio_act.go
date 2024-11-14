@@ -24,6 +24,7 @@ const (
 	PsyzTFIDF
 	PsyzRandomW
 	PsyzDongTing
+	PsyzMix
 )
 
 // ============================================================================================
@@ -36,7 +37,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 
 	// Print psyzkaller enabled mode
 	var psyzModeStr string = getPsyzFlagStr(psyzFlags)
-	fmt.Printf("%s", psyzModeStr)
+	fmt.Printf("Build Choice Table... %s", psyzModeStr)
 
 	//syzkaller ori code
 	if enabled == nil {
@@ -128,7 +129,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 // function for Pre-processing
 func getPsyzFlagStr(psyzFlags PsyzFlagType) string {
 	var flagStr string
-	flagStr += "Psyzkaller Enabled Modes: "
+	flagStr = ""
 	if (psyzFlags & PsyzNgram) != 0 {
 		flagStr += "Ngram "
 	}
@@ -141,8 +142,17 @@ func getPsyzFlagStr(psyzFlags PsyzFlagType) string {
 	if (psyzFlags & PsyzDongTing) != 0 {
 		flagStr += "DongTing "
 	}
-	flagStr += "\n"
-	return flagStr
+	if (psyzFlags & PsyzMix) != 0 {
+		flagStr += "MixGenerateOpti "
+	}
+
+	if flagStr == "" {
+		flagStr = "Psyzkaller Disabled.\n"
+	} else {
+		flagStr = "Psyzkaller Enabled Modes: " + flagStr + ".\n"
+		return flagStr
+	}
+
 }
 
 // ============================================================================================

@@ -7,23 +7,56 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Junjie-Fan/tfidf"
 )
 
 var tfidfLock sync.Mutex
+var gCount = 0
 
 func (target *Target) GenerateACT(rs rand.Source, ncalls int, ct *ChoiceTable, callpus *tfidf.TFIDF, psyzFlags PsyzFlagType) *Prog {
+	gCount += 1
+	//modStr := getPsyzFlagStr(psyzFlags)
+	//fmt.Printf("%sGenerate SCS via GenerateACT. Count: %d  ", modStr, gCount)
+	fmt.Printf("Generate SCS via GenerateACT. Count: %d  ", gCount)
+	if (psyzFlags)&PsyzMix != 0 {
+		rand.Seed(time.Now().UnixNano())
+		for {
+			randomFloat := rand.Float64()
+			if randomFloat < 0.25 && (psyzFlags&PsyzRandomW != 0) && (psyzFlags&PsyzTFIDF != 0) {
+				fmt.Printf("Call GenerateRandomWTFIDF(). RandomFloat: %f\n", randomFloat)
+				return target.GenerateRandomWTFIDF(rs, ncalls, ct, callpus)
+			}
+			if 0.25 < randomFloat && randomFloat < 0.5 && psyzFlags&PsyzRandomW != 0 {
+				fmt.Printf("Call GenerateRandomW(). RandomFloat: %f\n", randomFloat)
+				return target.GenerateRandomW(rs, ncalls, ct)
+			}
+			if 0.5 < randomFloat && randomFloat < 0.75 && psyzFlags&PsyzTFIDF != 0 {
+				fmt.Printf("Call GenerateTFIDF(). RandomFloat: %f\n", randomFloat)
+				return target.GenerateTFIDF(rs, ncalls, ct, callpus)
+			}
+			if 0.75 < randomFloat {
+				fmt.Printf("Call Generate(). RandomFloat: %f\n", randomFloat)
+				return target.Generate(rs, ncalls, ct)
+			}
+		}
+	}
+
 	if (psyzFlags&PsyzRandomW != 0) && (psyzFlags&PsyzTFIDF != 0) {
+		fmt.Printf("Call GenerateRandomWTFIDF(). \n")
 		return target.GenerateRandomWTFIDF(rs, ncalls, ct, callpus)
 	}
 	if psyzFlags&PsyzRandomW != 0 {
+		fmt.Printf("Call GenerateRandomW(). \n")
 		return target.GenerateRandomW(rs, ncalls, ct)
 	}
 	if psyzFlags&PsyzTFIDF != 0 {
+		fmt.Printf("Call GenerateTFIDF(). \n")
 		return target.GenerateTFIDF(rs, ncalls, ct, callpus)
 	}
 
+	fmt.Printf("Call Generate(). \n")
 	return target.Generate(rs, ncalls, ct)
 }
 
@@ -232,7 +265,7 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int3
 		run[i] += run[i-1]
 	}
 
-	fmt.Printf("NgramChooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
+	//fmt.Printf("NgramChooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
 	x := int32(r.Intn(int(run[len(run)-1])) + 1)
 	ret = sort.Search(len(run), func(i int) bool {
 		return run[i] >= x
@@ -266,7 +299,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 		return -1
 	}
 
-	fmt.Printf("chooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
+	//fmt.Printf("chooseFront: value of run[len(run)-1]: %d\n", run[len(run)-1])
 	x := int32(r.Intn(int(run[len(run)-1])) + 1)
 	res := sort.Search(len(run), func(i int) bool {
 		return run[i] >= x
