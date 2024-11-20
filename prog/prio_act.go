@@ -150,9 +150,8 @@ func getPsyzFlagStr(psyzFlags PsyzFlagType) string {
 		flagStr = "Psyzkaller Disabled.\n"
 	} else {
 		flagStr = "Psyzkaller Enabled Modes: " + flagStr + ".\n"
-		return flagStr
 	}
-
+	return flagStr
 }
 
 // ============================================================================================
