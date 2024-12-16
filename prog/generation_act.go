@@ -13,6 +13,7 @@ import (
 )
 
 var tfidfLock sync.Mutex
+var propeLock sync.Mutex
 var gCount = 0
 
 func (target *Target) GenerateACT(rs rand.Source, ncalls int, ct *ChoiceTable, callpus *tfidf.TFIDF, psyzFlags PsyzFlagType) *Prog {
@@ -250,6 +251,7 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int3
 	ret := -1
 	var run []int32
 	var id []int
+	propeLock.Lock()
 	for k0, v0 := range prope {
 		for k1, v1 := range v0 {
 			if k1 == bias && NotInSlice(k0, globalVisit) {
@@ -258,6 +260,7 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int3
 			}
 		}
 	}
+	propeLock.Unlock()
 	if run == nil {
 		return ret
 	}
@@ -316,6 +319,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 }
 
 func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, globalVisit []int, bias int) int { //根据ngram选后一个
+	propeLock.Lock()
 	if bias < 0 {
 		var callslice []int
 		for k := range prope {
@@ -329,6 +333,7 @@ func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, 
 	for k, v := range prope[bias] {
 		run[k] = v
 	}
+	propeLock.Unlock()
 	if len(run) == 0 || run == nil {
 		return -1
 	}
