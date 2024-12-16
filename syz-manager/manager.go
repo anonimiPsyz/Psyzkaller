@@ -59,6 +59,7 @@ var (
 		" T: enable psyzkaller's TFIDF optimization.\n"+
 		" R: enable psyzkaller's random Walk optimization.\n"+
 		" D: enable psyzkaller's DongTing optimization. Need successor_Prope.json in workdir.\n"+
+		" S: enable psyzkaller's DongTing optimization Special. Need successor_Prope.json in workdir. The syscall infomation is in Syzkaller's type.(Not Linux's original syscalls)\n"+
 		" M: enable psyzkaller's MIX optimization, Psyz will random use RandomW/TFIDF/RandomW + TFIDF/Origin in SCSs generating phase if related Flags are setted.\n"+
 		" e.g. psyzMode=DN  : means enable DongTing and N-gram optimizations. \n"+
 		" default: no optimization.\n")
@@ -535,10 +536,18 @@ func (mgr *Manager) phaseflagPsyz() {
 		mgr.psyzFlags |= prog.PsyzDongTing
 		modStr += "DongTing "
 	}
+	if strings.Index(*flagPsyz, "S") != -1 {
+		mgr.psyzFlags |= prog.PsyzDongTingSyzk
+		modStr += "DTSyzk "
+	}
 	if strings.Index(*flagPsyz, "M") != -1 {
 		mgr.psyzFlags |= prog.PsyzMix
 		modStr += "MixGenerateOpti "
-		mgr.loadSuccJsonData()
+		//mgr.loadSuccJsonData()
+	}
+
+	if (mgr.psyzFlags&prog.PsyzDongTing != 0) && (mgr.psyzFlags&prog.PsyzDongTingSyzk != 0) {
+		log.Fatalf("DongTing and DongTingSyzk cannot be enabled at the same time.")
 	}
 
 	if modStr == "" {
@@ -556,6 +565,7 @@ func (mgr *Manager) loadSuccJsonData() {
 			mgr.succJsonData = nil
 			log.Logf(0, "%s does not exist in the workdir, Psyzkaller DongTing optimization is disabled.", *flagDTJson)
 			mgr.psyzFlags &= ^prog.PsyzDongTing
+			mgr.psyzFlags &= ^prog.PsyzDongTingSyzk
 			return
 		} else {
 			log.Fatalf("Error reading file %s.json: %v", *flagDTJson, err)
@@ -584,7 +594,7 @@ func (mgr *Manager) preloadCorpus() {
 	mgr.fresh = len(mgr.corpusDB.Records) == 0
 
 	mgr.phaseflagPsyz()
-	if mgr.psyzFlags&prog.PsyzDongTing != 0 {
+	if (mgr.psyzFlags&prog.PsyzDongTing)|(mgr.psyzFlags&prog.PsyzDongTingSyzk) != 0 {
 		mgr.loadSuccJsonData()
 	}
 	//log.Fatalf("stop for test")

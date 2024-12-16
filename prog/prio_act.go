@@ -25,6 +25,7 @@ const (
 	PsyzRandomW
 	PsyzDongTing
 	PsyzMix
+	PsyzDongTingSyzk
 )
 
 // ============================================================================================
@@ -81,6 +82,8 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 	// DongTing Mode related code
 	if psyzFlags&PsyzDongTing != 0 {
 		initNRSuccessorPrope(generatableCalls, succJsonData)
+	} else if psyzFlags&PsyzDongTingSyzk != 0 {
+		initNRSuccessorPropeSyzk(generatableCalls, succJsonData)
 	} else {
 		NRSuccessorPrope = nil
 	}
@@ -97,7 +100,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 
 	// psyzkaller CalculatePrioritiesACT, N-gram and DongTing related code
 	var prios [][]int32
-	if (psyzFlags&PsyzNgram != 0) || (psyzFlags&PsyzDongTing != 0) {
+	if (psyzFlags&PsyzNgram != 0) || (psyzFlags&PsyzDongTing != 0) || (psyzFlags&PsyzDongTingSyzk != 0) {
 		prios = target.CalculatePrioritiesACT(corpus, psyzFlags)
 	} else {
 		prios = target.CalculatePriorities(corpus)
@@ -141,6 +144,9 @@ func getPsyzFlagStr(psyzFlags PsyzFlagType) string {
 	}
 	if (psyzFlags & PsyzDongTing) != 0 {
 		flagStr += "DongTing "
+	}
+	if (psyzFlags & PsyzDongTingSyzk) != 0 {
+		flagStr += "DongTingSyzk "
 	}
 	if (psyzFlags & PsyzMix) != 0 {
 		flagStr += "MixGenerateOpti "
@@ -187,6 +193,7 @@ func readAndCalcuNRSuccessorPrope(succJsonData []uint8) map[int]map[int]float32 
 	return ret_obj
 }
 
+// translate linux syscall ID to syzkaller's syscall ID, and disable Ungeneratable sysCalls.
 func initNRSuccessorPrope(generatableCalls []*Syscall, succJsonData []uint8) {
 	for _, syscallTmp := range generatableCalls {
 		tNR := syscallTmp.NR
@@ -198,6 +205,45 @@ func initNRSuccessorPrope(generatableCalls []*Syscall, succJsonData []uint8) {
 		}
 	}
 	NRSuccessorPrope = readAndCalcuNRSuccessorPrope(succJsonData)
+}
+
+// compare with initNRSuccessorPrope(), this function only need to disable Ungeneratable sysCalls.
+func initNRSuccessorPropeSyzk(generatableCalls []*Syscall, succJsonData []uint8) {
+	generatableIDs := make(map[int]bool)
+	for _, syscallTmp := range generatableCalls {
+		generatableIDs[syscallTmp.ID] = true
+	}
+
+	jsonData := succJsonData
+
+	infor_obj := make(map[int]map[int]float32)
+	err := json.Unmarshal(jsonData, &infor_obj)
+	if err != nil {
+		fmt.Println("JSON 解码失败:", err)
+		os.Exit(-1)
+	}
+	if len(infor_obj) == 0 {
+		os.Exit(-1)
+	}
+
+	ret_obj := make(map[int]map[int]float32)
+	for headID, sucMap := range infor_obj {
+		if _, ok := generatableIDs[headID]; !ok {
+			continue
+		}
+		for sucID, prop := range sucMap {
+			if _, ok := generatableIDs[sucID]; !ok {
+				continue
+			}
+			if _, ok := ret_obj[headID]; !ok {
+				ret_obj[headID] = make(map[int]float32)
+			}
+			ret_obj[headID][sucID] = prop
+
+		}
+
+	}
+	NRSuccessorPrope = ret_obj
 }
 
 // ============================================================================================
@@ -265,7 +311,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 	}
 	copy(ret2, ret)
 
-	if (psyzFlags & PsyzDongTing) != 0 {
+	if ((psyzFlags & PsyzDongTing) != 0) || ((psyzFlags & PsyzDongTingSyzk) != 0) {
 		for i, v0 := range NRSuccessorPrope {
 			var sum float32
 			sum = 0
