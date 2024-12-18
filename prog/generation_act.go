@@ -215,6 +215,8 @@ func (r *randGen) GenGraph(ncalls int, ct *ChoiceTable) *NGraph {
 func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (id int, dir int, bias int) {
 	Prope, Fre := r.BuildTwoGramTable()
 
+	//defer ChooseOneHandlePanic()
+
 	if isFirst { //选首个调用，选取随机值
 		//x := rand.Intn(len(ct.runs))  //不能随机选，会遇到None generatable的调用
 		x := ct.calls[r.Intn(len(ct.calls))].ID
@@ -246,6 +248,14 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 		}
 	}
 }
+
+/*
+func ChooseOneHandlePanic() {
+	if r := recover(); r != nil {
+		fmt.Println("ChooseOneHandlePanic:捕获到了panic:", r)
+	}
+}
+*/
 
 func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
 	ret := -1

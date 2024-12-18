@@ -275,11 +275,12 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 }
 
 func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) [][]int32 {
-	ret := make([][]int32, len(target.Syscalls))
-	for i := range ret {
-		ret[i] = make([]int32, len(target.Syscalls))
+	normalizeFactor := float32(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
+
+	ngramDynamic := make([][]int32, len(target.Syscalls))
+	for i := range ngramDynamic {
+		ngramDynamic[i] = make([]int32, len(target.Syscalls))
 	}
-	copy(ret, static)
 
 	if (psyzFlags & PsyzNgram) != 0 {
 		Twogram = MakeTwoGram()
@@ -291,41 +292,36 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		Twogram.CalculateProbalility()
 
 		for i, v0 := range Twogram.Prope {
-			var sum float32
-			sum = 0
-			for j, _ := range v0 {
-				sum += float32(ret[i][j])
-			}
 			for j, v1 := range v0 {
-				//fmt.Println("before", ret[i][j])
-				ret[i][j] += int32(sum * v1)
-				//fmt.Println("after", ret[i][j])
+				ngramDynamic[i][j] = int32(normalizeFactor * v1)
 			}
 		}
 	}
-	normalizePrios(ret)
 
-	ret2 := make([][]int32, len(target.Syscalls))
-	for i := range ret2 {
-		ret2[i] = make([]int32, len(target.Syscalls))
+	dtNgramDynamic := make([][]int32, len(target.Syscalls))
+	for i := range dtNgramDynamic {
+		dtNgramDynamic[i] = make([]int32, len(target.Syscalls))
 	}
-	copy(ret2, ret)
 
 	if ((psyzFlags & PsyzDongTing) != 0) || ((psyzFlags & PsyzDongTingSyzk) != 0) {
 		for i, v0 := range NRSuccessorPrope {
-			var sum float32
-			sum = 0
-			for j, _ := range v0 {
-				sum += float32(ret2[i][j])
-			}
 			for j, v1 := range v0 {
-				ret2[i][j] += int32(sum * v1)
+				dtNgramDynamic[i][j] += int32(normalizeFactor * v1)
 			}
 		}
 	}
-	normalizePrios(ret2)
 
-	return ret2
+	ret := make([][]int32, len(target.Syscalls))
+	for i := range ret {
+		ret[i] = make([]int32, len(target.Syscalls))
+	}
+	for i, v0 := range ret {
+		for j, _ := range v0 {
+			ret[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
+		}
+	}
+
+	return ret
 }
 
 func (twogram *TwoGramTable) CalculateProbalility() {
