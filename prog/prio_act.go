@@ -289,7 +289,9 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 				Twogram.NoGenPathCalFre(p)
 			}
 		}
+		PropeLock.Lock()
 		Twogram.CalculateProbalility()
+		PropeLock.Unlock()
 
 		for i, v0 := range Twogram.Prope {
 			for j, v1 := range v0 {

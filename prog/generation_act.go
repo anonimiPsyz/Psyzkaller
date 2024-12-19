@@ -13,7 +13,7 @@ import (
 )
 
 var tfidfLock sync.Mutex
-var propeLock sync.Mutex
+var PropeLock sync.Mutex
 var gCount = 0
 
 func (target *Target) GenerateACT(rs rand.Source, ncalls int, ct *ChoiceTable, callpus *tfidf.TFIDF, psyzFlags PsyzFlagType) *Prog {
@@ -215,8 +215,6 @@ func (r *randGen) GenGraph(ncalls int, ct *ChoiceTable) *NGraph {
 func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (id int, dir int, bias int) {
 	Prope, Fre := r.BuildTwoGramTable()
 
-	//defer ChooseOneHandlePanic()
-
 	if isFirst { //选首个调用，选取随机值
 		//x := rand.Intn(len(ct.runs))  //不能随机选，会遇到None generatable的调用
 		x := ct.calls[r.Intn(len(ct.calls))].ID
@@ -249,19 +247,11 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 	}
 }
 
-/*
-func ChooseOneHandlePanic() {
-	if r := recover(); r != nil {
-		fmt.Println("ChooseOneHandlePanic:捕获到了panic:", r)
-	}
-}
-*/
-
 func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
 	ret := -1
 	var run []int32
 	var id []int
-	propeLock.Lock()
+	PropeLock.Lock()
 	for k0, v0 := range prope {
 		for k1, v1 := range v0 {
 			if k1 == bias && NotInSlice(k0, globalVisit) {
@@ -270,7 +260,7 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int3
 			}
 		}
 	}
-	propeLock.Unlock()
+	PropeLock.Unlock()
 	if run == nil {
 		return ret
 	}
@@ -329,7 +319,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 }
 
 func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, globalVisit []int, bias int) int { //根据ngram选后一个
-	propeLock.Lock()
+	PropeLock.Lock()
 	if bias < 0 {
 		var callslice []int
 		for k := range prope {
@@ -343,7 +333,7 @@ func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, 
 	for k, v := range prope[bias] {
 		run[k] = v
 	}
-	propeLock.Unlock()
+	PropeLock.Unlock()
 	if len(run) == 0 || run == nil {
 		return -1
 	}
