@@ -1,4 +1,3 @@
-// read Corpus.db and calculate the bigGram successor probability
 package main
 
 import (
@@ -6,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/google/syzkaller/pkg/db"
@@ -21,6 +21,7 @@ var (
 	flagArch      = flag.String("arch", runtime.GOARCH, "target arch")
 	flagCorpus    = flag.String("corpus", "", "name of the corpus file")
 	jsonfile_name = flag.String("o", "DTNormalSuccPrope.json", "directory to store deserialized programs") //保存syscall直接后继的概率信息，里面是用syzkaller使用的ID来表示每个系统调用
+	flagCorpusDir = flag.String("corpus_dir", "", "directory to store deserialized programs")
 )
 
 func calculateCorpusSuccessorProbalility() {
@@ -84,8 +85,8 @@ func saveToJson() {
 func processCorpusDB(corpus []*prog.Prog) {
 	for _, v := range corpus {
 		callerId := -100
-		for j, v1 := range v.Calls {
-			fmt.Printf("序号%d ,ID:%v, Name:%v\n", j, v1.Meta.ID, v1.Meta.Name)
+		for _, v1 := range v.Calls {
+			//fmt.Printf("序号%d ,ID:%v, Name:%v\n", j, v1.Meta.ID, v1.Meta.Name)
 			if callerId != -100 {
 				if _, ok := CorpusSuccessorFrequece[callerId]; !ok {
 					CorpusSuccessorFrequece[callerId] = make(map[int]int32)
@@ -94,9 +95,38 @@ func processCorpusDB(corpus []*prog.Prog) {
 			}
 			callerId = v1.Meta.ID
 		}
-		fmt.Printf("\n")
+		//fmt.Printf("\n")
 	}
 	fmt.Println("length of corpus:", len(corpus))
+}
+
+func readAndprocessCorpusDB(corpusString string, target *prog.Target) {
+	corpus, err := db.ReadCorpus(corpusString, target)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read corpus: %v\n", err)
+		os.Exit(1)
+	}
+	processCorpusDB(corpus)
+}
+
+func readAndprocessCorpusDBDir(corpusDir *string, target *prog.Target) {
+	// 遍历目录中的所有文件
+	fmt.Printf("遍历目录中的所有文件：%s\n", corpusDir)
+	err := filepath.Walk(*corpusDir, func(path string, info os.FileInfo, err error) error {
+		fmt.Printf("正在处理文件：%s\n", path)
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			// 对每个文件调用 readAndprocessCorpusDB
+			readAndprocessCorpusDB(path, target)
+			return nil
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Errorf("error walking the path %q: %v", *corpusDir, err)
+	}
 }
 
 func main() {
@@ -106,13 +136,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-	corpus, err := db.ReadCorpus(*flagCorpus, target)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read corpus: %v\n", err)
-		os.Exit(1)
+	if *flagCorpus != "" {
+		readAndprocessCorpusDB(*flagCorpus, target)
+	} else if *flagCorpusDir != "" {
+		readAndprocessCorpusDBDir(flagCorpusDir, target)
 	}
-
-	processCorpusDB(corpus)
 	calculateCorpusSuccessorProbalility()
 	saveToJson()
 

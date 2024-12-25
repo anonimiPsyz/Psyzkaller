@@ -3,6 +3,7 @@ package prog
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -275,7 +276,7 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 }
 
 func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) [][]int32 {
-	normalizeFactor := float32(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
+	//normalizeFactor := float32(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
 
 	ngramDynamic := make([][]int32, len(target.Syscalls))
 	for i := range ngramDynamic {
@@ -295,9 +296,11 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 
 		for i, v0 := range Twogram.Prope {
 			for j, v1 := range v0 {
-				ngramDynamic[i][j] = int32(normalizeFactor * v1)
+				//ngramDynamic[i][j] = int32(normalizeFactor * v1)
+				ngramDynamic[i][j] = int32(2.0 * math.Sqrt(float64(v1)))
 			}
 		}
+		normalizePrios(ngramDynamic)
 	}
 
 	dtNgramDynamic := make([][]int32, len(target.Syscalls))
@@ -308,9 +311,11 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 	if ((psyzFlags & PsyzDongTing) != 0) || ((psyzFlags & PsyzDongTingSyzk) != 0) {
 		for i, v0 := range NRSuccessorPrope {
 			for j, v1 := range v0 {
-				dtNgramDynamic[i][j] += int32(normalizeFactor * v1)
+				//dtNgramDynamic[i][j] += int32(normalizeFactor * v1)
+				dtNgramDynamic[i][j] = int32(2.0 * math.Sqrt(float64(v1)))
 			}
 		}
+		normalizePrios(dtNgramDynamic)
 	}
 
 	ret := make([][]int32, len(target.Syscalls))
