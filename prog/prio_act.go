@@ -284,15 +284,14 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 	}
 
 	if (psyzFlags & PsyzNgram) != 0 {
+		PropeLock.Lock()
 		Twogram = MakeTwoGram()
 		for _, p := range corpus {
 			if len(p.Calls) > 1 {
 				Twogram.NoGenPathCalFre(p)
 			}
 		}
-		PropeLock.Lock()
 		Twogram.CalculateProbalility()
-		PropeLock.Unlock()
 
 		for i, v0 := range Twogram.Prope {
 			for j, v1 := range v0 {
@@ -300,6 +299,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 				ngramDynamic[i][j] = int32(2.0 * math.Sqrt(float64(v1)))
 			}
 		}
+		PropeLock.Unlock()
 		normalizePrios(ngramDynamic)
 	}
 

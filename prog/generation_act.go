@@ -247,12 +247,12 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 	}
 }
 
-func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, prope map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
+func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, Fre map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
 	ret := -1
 	var run []int32
 	var id []int
 	PropeLock.Lock()
-	for k0, v0 := range prope {
+	for k0, v0 := range Fre {
 		for k1, v1 := range v0 {
 			if k1 == bias && NotInSlice(k0, globalVisit) {
 				run = append(run, v1)
