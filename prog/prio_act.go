@@ -39,7 +39,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 
 	// Print psyzkaller enabled mode
 	var psyzModeStr string = getPsyzFlagStr(psyzFlags)
-	fmt.Printf("Build Choice Table... %s", psyzModeStr)
+	fmt.Printf("Build Choice Table... %s\n", psyzModeStr)
 
 	//syzkaller ori code
 	if enabled == nil {
@@ -102,8 +102,10 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 	// psyzkaller CalculatePrioritiesACT, N-gram and DongTing related code
 	var prios [][]int32
 	if (psyzFlags&PsyzNgram != 0) || (psyzFlags&PsyzDongTing != 0) || (psyzFlags&PsyzDongTingSyzk != 0) {
+		//fmt.Printf("Build Choice Table use CalculatePrioritiesACT\n")
 		prios = target.CalculatePrioritiesACT(corpus, psyzFlags)
 	} else {
+		//fmt.Printf("Build Choice Table use CalculatePriorities\n")
 		prios = target.CalculatePriorities(corpus)
 	}
 
@@ -166,6 +168,9 @@ func getPsyzFlagStr(psyzFlags PsyzFlagType) string {
 func readAndCalcuNRSuccessorPrope(succJsonData []uint8) map[int]map[int]float32 {
 	jsonData := succJsonData
 
+	//addDTTotal := 0
+	//addZeroDTTotal := 0
+
 	infor_obj := make(map[int]map[int]float32)
 	err := json.Unmarshal(jsonData, &infor_obj)
 	if err != nil {
@@ -187,10 +192,17 @@ func readAndCalcuNRSuccessorPrope(succJsonData []uint8) map[int]map[int]float32 
 						ret_obj[headID] = make(map[int]float32)
 					}
 					ret_obj[headID][sucID] = prop
+					//addDTTotal += 1
+					//if prop == 0 {
+					//	addZeroDTTotal += 1
+					//}
 				}
 			}
 		}
 	}
+	//fmt.Printf("DongTing Mode: addDTTotal:%d\n", addDTTotal)
+	//fmt.Printf("DongTing Mode: addZeroDTTotal:%d\n", addZeroDTTotal)
+	//os.Exit(-1)
 	return ret_obj
 }
 
@@ -250,6 +262,7 @@ func initNRSuccessorPropeSyzk(generatableCalls []*Syscall, succJsonData []uint8)
 // ============================================================================================
 // CalculatePrioritiesACT, N-gram and DongTing related code
 func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagType) [][]int32 {
+	//fmt.Printf("CalculatePrioritiesACT...\n")
 	static := target.calcStaticPriorities()
 	if len(corpus) != 0 {
 		// Let's just sum the static and dynamic distributions.
@@ -276,7 +289,9 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 }
 
 func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) [][]int32 {
-	//normalizeFactor := float32(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
+	//fmt.Printf("calcDynamicACT...\n")
+	//normalizeFactor := float64(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
+	total := 10 * float64(len(target.Syscalls))
 
 	ngramDynamic := make([][]int32, len(target.Syscalls))
 	for i := range ngramDynamic {
@@ -296,7 +311,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		for i, v0 := range Twogram.Prope {
 			for j, v1 := range v0 {
 				//ngramDynamic[i][j] = int32(normalizeFactor * v1)
-				ngramDynamic[i][j] = int32(2.0 * math.Sqrt(float64(v1)))
+				ngramDynamic[i][j] = int32(total * 2.0 * math.Sqrt(float64(v1)))
 			}
 		}
 		PropeLock.Unlock()
@@ -312,7 +327,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		for i, v0 := range NRSuccessorPrope {
 			for j, v1 := range v0 {
 				//dtNgramDynamic[i][j] += int32(normalizeFactor * v1)
-				dtNgramDynamic[i][j] = int32(2.0 * math.Sqrt(float64(v1)))
+				dtNgramDynamic[i][j] = int32(total * 2.0 * math.Sqrt(float64(v1)))
 			}
 		}
 		normalizePrios(dtNgramDynamic)
@@ -327,6 +342,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 			ret[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
 		}
 	}
+	//target.printSomePairInform(static, dtNgramDynamic)
 
 	return ret
 }
@@ -413,4 +429,117 @@ func (target *Target) CalculatePrioritiesTFIDF(corpus []*Prog, f *tfidf.TFIDF) {
 			f.AddDocs(resString)
 		}
 	}
+}
+
+// ============================================================================================
+// 打印静态分析的结果，看看syzkaller syscall与linux syscall的对应关系
+func (target *Target) printSomePairInform(static [][]int32, dt [][]int32) {
+	linux2Syzcall := make([][]int, 600) //kernel syscall number should be about 440+, set 600 to insure enough
+
+	for _, s := range target.Syscalls {
+		linux2Syzcall[s.NR] = append(linux2Syzcall[s.NR], s.ID)
+	}
+
+	IDtoNR := make(map[int]int)
+	for k, v := range NRtoIDlist {
+		for _, v1 := range v {
+			IDtoNR[v1] = int(k)
+		}
+	}
+
+	tatalPair := uint64(0)
+	outstandPair := uint64(0)
+	zeroPair := uint64(0) // NR[i][j]对应的ID[i][j]都为0
+	totalNRPair := uint64(0)
+	totalZeroNRPair := uint64(0)
+	belowAvaPair := uint64(0)
+	totalNoneZeroPair := uint64(0)
+
+	NRtoNRUsed := make(map[int]map[int]bool)
+	for i, vl := range dt {
+		for j, _ := range vl {
+			if !NRtoNRUsed[i][j] && dt[i][j] > 0 {
+				NR_caller := IDtoNR[i]
+				NR_callee := IDtoNR[j]
+				callerList := NRtoIDlist[uint64(NR_caller)]
+				calleeList := NRtoIDlist[uint64(NR_callee)]
+				tatalPair += uint64(len(callerList) * len(calleeList))
+
+				totalPrio := uint64(0)
+				noneZeroPair := uint64(0)
+				everagePrio := uint64(0)
+				totalNRPair += 1
+
+				fmt.Printf("NR_caller: %v NR_callee: %v\n", NR_caller, NR_callee)
+				fmt.Printf("callerList: %v \ncalleeList: %v\n", callerList, calleeList)
+				fmt.Printf("dt[%d][%d] = %d \n", i, j, dt[i][j])
+
+				for _, c1 := range callerList {
+					for _, c2 := range calleeList {
+						//fmt.Printf("dt[%d][%d]=%d  ", c1, c2, dt[c1][c2])
+						if NRtoNRUsed[c1] == nil {
+							NRtoNRUsed[c1] = make(map[int]bool)
+						}
+						NRtoNRUsed[c1][c2] = true
+					}
+				}
+
+				for _, c1 := range callerList {
+					//fmt.Printf("static[%d] ---    ", c1)
+					for _, c2 := range calleeList {
+						if static[c1][c2] > 0 {
+							//fmt.Printf("[%d]=%d|%d  ", c2, static[c1][c2], dt[c1][c2])
+							totalPrio += uint64(static[c1][c2])
+							noneZeroPair += 1
+							totalNoneZeroPair += 1
+							if static[c1][c2] <= 10 {
+								belowAvaPair += 1
+							}
+						}
+					}
+					//fmt.Printf("\n")
+				}
+
+				if noneZeroPair == 0 {
+					outstandPair += uint64(len(callerList) * len(calleeList))
+					zeroPair += uint64(len(callerList) * len(calleeList))
+					totalZeroNRPair += 1
+				} else {
+					everagePrio = totalPrio / noneZeroPair
+					for _, c1 := range callerList {
+						for _, c2 := range calleeList {
+							if static[c1][c2] > 0 {
+								if uint64(static[c1][c2]) >= (2*everagePrio) || uint64(static[c1][c2]) < (everagePrio/2) {
+									outstandPair += 1
+								} else {
+									outstandPair += 1
+									zeroPair += 1
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
+	}
+
+	dt_count := uint64(0)
+	for i, vl := range dt {
+		for j, _ := range vl {
+			if dt[i][j] > 0 {
+				dt_count += 1
+			}
+		}
+	}
+
+	fmt.Printf("tatalPair: %d\n", tatalPair)
+	fmt.Printf("outstandPair: %d\n", outstandPair)
+	fmt.Printf("zeroPair: %d\n", zeroPair)
+	fmt.Printf("totalNRPair: %d\n", totalNRPair)
+	fmt.Printf("totalZeroNRPair: %d\n", totalZeroNRPair)
+	fmt.Printf("dt_count: %d\n", dt_count)
+	fmt.Printf("belowAvaPair: %d\n", belowAvaPair)
+	fmt.Printf("totalNoneZeroPair: %d\n", totalNoneZeroPair)
+
 }
