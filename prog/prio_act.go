@@ -128,6 +128,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 		}
 	}
 
+	target.WriteCTToJson(run, "ChoiceTable.json")
 	return &ChoiceTable{target, run, generatableCalls}, callpus
 }
 
@@ -266,23 +267,14 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 	static := target.calcStaticPriorities()
 	if len(corpus) != 0 {
 		// Let's just sum the static and dynamic distributions.
-		if len(corpus) < 1000 {
-			dynamic := target.calcDynamicPrio(corpus)
-			for i, prios := range dynamic {
-				dst := static[i]
-				for j, p := range prios {
-					dst[j] += p
-				}
+		static := target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
+		dynamic := target.calcDynamicPrio(corpus)
+		for i, prios := range dynamic {
+			dst := static[i]
+			for j, p := range prios {
+				dst[j] += p
 			}
-		} else {
-			static := target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
-			dynamic := target.calcDynamicPrio(corpus)
-			for i, prios := range dynamic {
-				dst := static[i]
-				for j, p := range prios {
-					dst[j] += p
-				}
-			}
+
 		}
 	}
 	return static
@@ -298,7 +290,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		ngramDynamic[i] = make([]int32, len(target.Syscalls))
 	}
 
-	if (psyzFlags & PsyzNgram) != 0 {
+	if (psyzFlags&PsyzNgram) != 0 && len(corpus) > 1000 {
 		PropeLock.Lock()
 		Twogram = MakeTwoGram()
 		for _, p := range corpus {
@@ -315,7 +307,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 			}
 		}
 		PropeLock.Unlock()
-		normalizePrios(ngramDynamic)
+		normalizePriosBigNum(ngramDynamic)
 	}
 
 	dtNgramDynamic := make([][]int32, len(target.Syscalls))
@@ -327,10 +319,11 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		for i, v0 := range NRSuccessorPrope {
 			for j, v1 := range v0 {
 				//dtNgramDynamic[i][j] += int32(normalizeFactor * v1)
+				//dtNgramDynamic[i][j] += int32( 2.0 * math.Sqrt(float64(v1)))
 				dtNgramDynamic[i][j] = int32(total * 2.0 * math.Sqrt(float64(v1)))
 			}
 		}
-		normalizePrios(dtNgramDynamic)
+		normalizePriosBigNum(dtNgramDynamic)
 	}
 
 	ret := make([][]int32, len(target.Syscalls))
@@ -343,6 +336,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		}
 	}
 	//target.printSomePairInform(static, dtNgramDynamic)
+	//analy_static_dt_ngram_result(ret, static, ngramDynamic, dtNgramDynamic)
 
 	return ret
 }
@@ -427,6 +421,24 @@ func (target *Target) CalculatePrioritiesTFIDF(corpus []*Prog, f *tfidf.TFIDF) {
 			}
 			resString := strings.Join(idString, " ")
 			f.AddDocs(resString)
+		}
+	}
+}
+
+// normalizePrio distributes |N| * 10 points proportional to the values in the matrix.
+// 避免p*tatal过大导致整数溢出
+func normalizePriosBigNum(prios [][]int32) {
+	total := 10 * int32(len(prios))
+	for _, prio := range prios {
+		sum := int32(0)
+		for _, p := range prio {
+			sum += p
+		}
+		if sum == 0 {
+			continue
+		}
+		for i, p := range prio {
+			prio[i] = int32(float64(p) * float64(total) / float64(sum))
 		}
 	}
 }
@@ -542,4 +554,41 @@ func (target *Target) printSomePairInform(static [][]int32, dt [][]int32) {
 	fmt.Printf("belowAvaPair: %d\n", belowAvaPair)
 	fmt.Printf("totalNoneZeroPair: %d\n", totalNoneZeroPair)
 
+}
+
+func analy_static_dt_ngram_result(ret, static, ngramDynamic, dtNgramDynamic [][]int32) {
+	for i, v0 := range ret {
+		totalStatic := int32(0)
+		totalngram := int32(0)
+		totaldt := int32(0)
+		for j, _ := range v0 {
+			ret[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
+			totalStatic += static[i][j]
+			totalngram += ngramDynamic[i][j]
+			totaldt += dtNgramDynamic[i][j]
+		}
+		fmt.Printf("totalStatic: %d, totalngram: %d, totaldt: %d\n", totalStatic, totalngram, totaldt)
+	}
+}
+
+// ============================================================================================
+// 打印CT表信息到json文件
+func (target *Target) WriteCTToJson(runs [][]int32, filename string) error {
+	// 打开文件，如果文件存在则覆盖
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 将 [][]int 对象编码为 JSON 格式
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // 设置缩进以便于阅读
+
+	err = encoder.Encode(runs)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
