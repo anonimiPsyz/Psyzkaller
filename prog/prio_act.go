@@ -267,7 +267,8 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 	static := target.calcStaticPriorities()
 	if len(corpus) != 0 {
 		// Let's just sum the static and dynamic distributions.
-		static := target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
+		//static := target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
+		target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
 		dynamic := target.calcDynamicPrio(corpus)
 		for i, prios := range dynamic {
 			dst := static[i]
@@ -280,7 +281,7 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 	return static
 }
 
-func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) [][]int32 {
+func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) {
 	//fmt.Printf("calcDynamicACT...\n")
 	//normalizeFactor := float64(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
 	total := 10 * float64(len(target.Syscalls))
@@ -326,19 +327,15 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		normalizePriosBigNum(dtNgramDynamic)
 	}
 
-	ret := make([][]int32, len(target.Syscalls))
-	for i := range ret {
-		ret[i] = make([]int32, len(target.Syscalls))
-	}
-	for i, v0 := range ret {
-		for j, _ := range v0 {
-			ret[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
+	for i := range static {
+		for j := range static[i] {
+			static[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
 		}
 	}
 	//target.printSomePairInform(static, dtNgramDynamic)
 	//analy_static_dt_ngram_result(ret, static, ngramDynamic, dtNgramDynamic)
 
-	return ret
+	//return ret
 }
 
 func (twogram *TwoGramTable) CalculateProbalility() {
