@@ -128,7 +128,7 @@ func (target *Target) BuildChoiceTablePsyz(corpus []*Prog, enabled map[*Syscall]
 		}
 	}
 
-	target.WriteCTToJson(run, "ChoiceTable.json")
+	//target.WriteCTToJson(run, "choiceTable.json")
 	return &ChoiceTable{target, run, generatableCalls}, callpus
 }
 
@@ -586,6 +586,28 @@ func (target *Target) WriteCTToJson(runs [][]int32, filename string) error {
 	encoder.SetIndent("", "  ") // 设置缩进以便于阅读
 
 	err = encoder.Encode(runs)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ============================================================================================
+// 打印CT表信息到json文件
+func (target *Target) WriteCTToJson2(ct *ChoiceTable, filename string) error {
+	// 打开文件，如果文件存在则覆盖
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 将 [][]int 对象编码为 JSON 格式
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // 设置缩进以便于阅读
+
+	err = encoder.Encode(ct.runs)
 	if err != nil {
 		return err
 	}

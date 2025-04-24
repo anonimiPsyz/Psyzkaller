@@ -321,6 +321,7 @@ func (fuzzer *Fuzzer) updateChoiceTable(programs []*prog.Prog) {
 		fuzzer.ct = newCt
 	}
 	fuzzer.callpus = newCallpus
+	//fuzzer.target.WriteCTToJson2(fuzzer.ct, "choiceTable.json")
 }
 
 func (fuzzer *Fuzzer) choiceTableUpdater() {
