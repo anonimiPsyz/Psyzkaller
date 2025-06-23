@@ -264,6 +264,7 @@ func initNRSuccessorPropeSyzk(generatableCalls []*Syscall, succJsonData []uint8)
 // CalculatePrioritiesACT, N-gram and DongTing related code
 func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagType) [][]int32 {
 	//fmt.Printf("CalculatePrioritiesACT...\n")
+	var pd int32 = 1
 	static := target.calcStaticPriorities()
 	if len(corpus) != 0 {
 		// Let's just sum the static and dynamic distributions.
@@ -273,7 +274,7 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 		for i, prios := range dynamic {
 			dst := static[i]
 			for j, p := range prios {
-				dst[j] += p
+				dst[j] += (p * pd)
 			}
 
 		}
@@ -284,6 +285,9 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags PsyzFlagType) {
 	//fmt.Printf("calcDynamicACT...\n")
 	//normalizeFactor := float64(10 * int32(len(target.Syscalls))) // comes from function normalizePrios()
+	var ps int32 = 1
+	var pdn int32 = 1
+	var pdtn int32 = 1
 	total := 10 * float64(len(target.Syscalls))
 
 	ngramDynamic := make([][]int32, len(target.Syscalls))
@@ -329,7 +333,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 
 	for i := range static {
 		for j := range static[i] {
-			static[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
+			static[i][j] = static[i][j]*ps + ngramDynamic[i][j]*pdn + dtNgramDynamic[i][j]*pdtn
 		}
 	}
 	//target.printSomePairInform(static, dtNgramDynamic)
