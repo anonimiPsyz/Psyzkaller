@@ -274,6 +274,7 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 		for i, prios := range dynamic {
 			dst := static[i]
 			for j, p := range prios {
+				//dst[j] += p
 				dst[j] += (p * pd)
 			}
 
@@ -329,10 +330,23 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 			}
 		}
 		normalizePriosBigNum(dtNgramDynamic)
+
+		Twogram = MakeTwoGram()
+		for i, v0 := range dtNgramDynamic {
+			itotal := 0
+			for _, v1 := range v0 {
+				//Twogram.Prope[i][j] += float32(v1)
+				itotal += int(v1)
+			}
+			for j, v1 := range v0 {
+				Twogram.Prope[i][j] += float32(v1) / float32(itotal)
+			}
+		}
 	}
 
 	for i := range static {
 		for j := range static[i] {
+			//static[i][j] = static[i][j] + ngramDynamic[i][j] + dtNgramDynamic[i][j]
 			static[i][j] = static[i][j]*ps + ngramDynamic[i][j]*pdn + dtNgramDynamic[i][j]*pdtn
 		}
 	}
