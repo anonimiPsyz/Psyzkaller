@@ -342,6 +342,16 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 				Twogram.Prope[i][j] += float32(v1) / float32(itotal)
 			}
 		}
+
+		for i, v0 := range Twogram.Prope {
+			ftotal := float32(0.0)
+			for _, v1 := range v0 {
+				ftotal += v1
+			}
+			for j, v1 := range v0 {
+				Twogram.Prope[i][j] = v1 / ftotal
+			}
+		}
 	}
 
 	for i := range static {
