@@ -340,6 +340,9 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 			}
 			for j, v1 := range v0 {
 				if itotal != 0 {
+					if Twogram.Prope[i] == nil {
+						Twogram.Prope[i] = make(map[int]float32)
+					}
 					Twogram.Prope[i][j] += float32(v1) / float32(itotal)
 				}
 			}
@@ -352,6 +355,9 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 			}
 			for j, v1 := range v0 {
 				if ftotal != 0 {
+					if Twogram.Prope[i] == nil {
+						Twogram.Prope[i] = make(map[int]float32)
+					}
 					Twogram.Prope[i][j] = v1 / ftotal
 				}
 			}
