@@ -331,6 +331,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 		}
 		normalizePriosBigNum(dtNgramDynamic)
 
+		PropeLock.Lock()
 		Twogram = MakeTwoGram()
 		for i, v0 := range dtNgramDynamic {
 			itotal := 0
@@ -362,6 +363,7 @@ func (target *Target) calcDynamicACT(corpus []*Prog, static [][]int32, psyzFlags
 				}
 			}
 		}
+		PropeLock.Unlock()
 	}
 
 	for i := range static {
