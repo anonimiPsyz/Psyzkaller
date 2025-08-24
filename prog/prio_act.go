@@ -268,8 +268,8 @@ func (target *Target) CalculatePrioritiesACT(corpus []*Prog, psyzFlags PsyzFlagT
 	static := target.calcStaticPriorities()
 	if len(corpus) != 0 {
 		// Let's just sum the static and dynamic distributions.
-		//static := target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
-		target.calcDynamicACT(corpus, static, psyzFlags) //增强矩阵
+		//static := target.calcDynamicACT(corpus, static, psyzFlags) 
+		target.calcDynamicACT(corpus, static, psyzFlags) 
 		dynamic := target.calcDynamicPrio(corpus)
 		for i, prios := range dynamic {
 			dst := static[i]
@@ -481,7 +481,6 @@ func normalizePriosBigNum(prios [][]int32) {
 }
 
 // ============================================================================================
-// 打印静态分析的结果，看看syzkaller syscall与linux syscall的对应关系
 func (target *Target) printSomePairInform(static [][]int32, dt [][]int32) {
 	linux2Syzcall := make([][]int, 600) //kernel syscall number should be about 440+, set 600 to insure enough
 
@@ -498,7 +497,7 @@ func (target *Target) printSomePairInform(static [][]int32, dt [][]int32) {
 
 	tatalPair := uint64(0)
 	outstandPair := uint64(0)
-	zeroPair := uint64(0) // NR[i][j]对应的ID[i][j]都为0
+	zeroPair := uint64(0) 
 	totalNRPair := uint64(0)
 	totalZeroNRPair := uint64(0)
 	belowAvaPair := uint64(0)
@@ -609,18 +608,15 @@ func analy_static_dt_ngram_result(ret, static, ngramDynamic, dtNgramDynamic [][]
 }
 
 // ============================================================================================
-// 打印CT表信息到json文件
 func (target *Target) WriteCTToJson(runs [][]int32, filename string) error {
-	// 打开文件，如果文件存在则覆盖
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// 将 [][]int 对象编码为 JSON 格式
 	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // 设置缩进以便于阅读
+	encoder.SetIndent("", "  ") 
 
 	err = encoder.Encode(runs)
 	if err != nil {
@@ -631,18 +627,15 @@ func (target *Target) WriteCTToJson(runs [][]int32, filename string) error {
 }
 
 // ============================================================================================
-// 打印CT表信息到json文件
 func (target *Target) WriteCTToJson2(ct *ChoiceTable, filename string) error {
-	// 打开文件，如果文件存在则覆盖
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// 将 [][]int 对象编码为 JSON 格式
 	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // 设置缩进以便于阅读
+	encoder.SetIndent("", "  ") 
 
 	err = encoder.Encode(ct.runs)
 	if err != nil {

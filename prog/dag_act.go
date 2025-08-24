@@ -5,10 +5,9 @@ import (
 	"time"
 )
 
-// 这个程序根据传入的矩阵构造有向图，使用拓扑排序选择所有的选择
-type DAG struct { //有向图结构体
-	vertex int           //顶点个数
-	list   map[int][]int //key为目标节点，后面的slice为以key为目标节点的起点集合
+type DAG struct { 
+	vertex int           
+	list   map[int][]int
 }
 
 func (g *DAG) addVertex(source int, dest int) {
@@ -43,7 +42,7 @@ func NewGraph(v int) *DAG {
 	return g
 }
 
-func InitfromMatrix(matrix [][]int) *DAG { //根据二维矩阵建图
+func InitfromMatrix(matrix [][]int) *DAG { 
 	dag := NewGraph(len(matrix))
 	for i, v0 := range matrix {
 		for j, v1 := range v0 {
@@ -55,13 +54,13 @@ func InitfromMatrix(matrix [][]int) *DAG { //根据二维矩阵建图
 	return dag
 }
 
-func (dag *DAG) MinusInDegree(i int, inDegree map[int]int) { //入度减1
+func (dag *DAG) MinusInDegree(i int, inDegree map[int]int) { 
 	for _, k := range dag.list[i] {
 		inDegree[k]--
 	}
 }
 
-func (dag *DAG) ADDInDegree(i int, inDegree map[int]int) { //入度加1
+func (dag *DAG) ADDInDegree(i int, inDegree map[int]int) { 
 	for _, k := range dag.list[i] {
 		inDegree[k]++
 	}
@@ -83,7 +82,7 @@ func TopoSort(matrix [][]int) [][]int {
 	visited := make([]bool, dag.vertex)
 	paths := make([][]int, 0)
 	//===========
-	var curse func(dag *DAG, inDegree map[int]int, path []int, visited []bool, node int) //回溯算法，计算出所有路径
+	var curse func(dag *DAG, inDegree map[int]int, path []int, visited []bool, node int) 
 	curse = func(dag *DAG, inDegree map[int]int, path []int, visited []bool, start int) {
 		if len(path) == dag.vertex {
 			temp := make([]int, len(path))

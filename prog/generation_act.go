@@ -193,7 +193,7 @@ func (r *randGen) GenGraph(ncalls int, ct *ChoiceTable) *NGraph {
 		IDmap: make(map[int]int),
 		Graph: make([][]int, ncalls),
 	}
-	choose, _, _ := r.ChooseOne(globalVisit, ct, true) //选择第一个调用
+	choose, _, _ := r.ChooseOne(globalVisit, ct, true) 
 	globalVisit = append(globalVisit, choose)
 	ngraph.Graph[0] = make([]int, ncalls)
 	ngraph.IDmap[0] = choose
@@ -204,7 +204,7 @@ func (r *randGen) GenGraph(ncalls int, ct *ChoiceTable) *NGraph {
 		choose, dir, before = r.ChooseOne(globalVisit, ct, false)
 		globalVisit = append(globalVisit, choose)
 		ngraph.IDmap[i] = choose
-		if dir == 0 { //向后扩展了一个调用，开辟该调用的空间
+		if dir == 0 { 
 			ngraph.Graph[i] = make([]int, ncalls)
 		}
 		AppendGraph(ngraph, before, i, dir, ncalls)
@@ -215,18 +215,17 @@ func (r *randGen) GenGraph(ncalls int, ct *ChoiceTable) *NGraph {
 func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (id int, dir int, bias int) {
 	Prope, Fre := r.BuildTwoGramTable()
 
-	if isFirst { //选首个调用，选取随机值
-		//x := rand.Intn(len(ct.runs))  //不能随机选，会遇到None generatable的调用
+	if isFirst { 
+		//x := rand.Intn(len(ct.runs))  
 		x := ct.calls[r.Intn(len(ct.calls))].ID
 		return x, 0, -1
 
-	} else { //其他位置调用
-		rd := r.Intn(2)                       //随机数选前面还是后面
-		biasIndex := r.Intn(len(globalVisit)) //选择bias的下标随机数
+	} else { 
+		rd := r.Intn(2)                       
+		biasIndex := r.Intn(len(globalVisit)) 
 		bias := globalVisit[biasIndex]
-		//1选前向
 		if rd == 1 {
-			if key := ct.NgramChooseFront(r.Rand, Fre, globalVisit, bias); (key != -1) && ct.Generatable(key) { //在N-gram表中没有该项
+			if key := ct.NgramChooseFront(r.Rand, Fre, globalVisit, bias); (key != -1) && ct.Generatable(key) { 
 				return key, rd, biasIndex
 			} else if key2 := ct.chooseFront(r.Rand, globalVisit, bias); (key2 != -1) && ct.Generatable(key2) {
 
@@ -236,7 +235,7 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 				key3 := ct.choose(r.Rand, bias)
 				return key3, rd, biasIndex
 			}
-		} else { //0选后向
+		} else { 
 			if key := ct.NgramChoose(r.Rand, Prope, globalVisit, bias); (key != -1) && ct.Generatable(key) {
 				return key, rd, biasIndex
 			} else {
@@ -247,7 +246,7 @@ func (r *randGen) ChooseOne(globalVisit []int, ct *ChoiceTable, isFirst bool) (i
 	}
 }
 
-func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, Fre map[int]map[int]int32, globalVisit []int, bias int) int { //根据ngram选前一个
+func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, Fre map[int]map[int]int32, globalVisit []int, bias int) int { 
 	ret := -1
 	var run []int32
 	var id []int
@@ -276,11 +275,11 @@ func (ct *ChoiceTable) NgramChooseFront(r *rand.Rand, Fre map[int]map[int]int32,
 	return id[ret]
 }
 
-func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) int { //choiceTable根据bias选前一个
+func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) int { 
 	runs := ct.runs
 	var run []int32
 	for _, v0 := range runs {
-		if v0 == nil { //必须保证run的完整，否则返回的bias 不正确		//
+		if v0 == nil { 
 			run = append(run, 0) //
 		} //
 		if v0 != nil {
@@ -298,7 +297,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 		run[i] += run[i-1]
 	}
 
-	if int(run[len(run)-1]) <= 0 { //这是显然存在的情况
+	if int(run[len(run)-1]) <= 0 { 
 		return -1
 	}
 
@@ -310,7 +309,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 	// if !ct.Generatable(res) {
 	// 	panic("selected disabled or non-generatable syscall")
 	// }
-	for ; res < len(run); res++ { //选一个不在globalVisit的调用
+	for ; res < len(run); res++ { 
 		if NotInSlice(res, globalVisit) {
 			return res
 		}
@@ -318,7 +317,7 @@ func (ct *ChoiceTable) chooseFront(r *rand.Rand, globalVisit []int, bias int) in
 	return -1
 }
 
-func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, globalVisit []int, bias int) int { //根据ngram选后一个
+func (ct *ChoiceTable) NgramChoose(r *rand.Rand, prope map[int]map[int]float32, globalVisit []int, bias int) int { 
 	PropeLock.Lock()
 	if bias < 0 {
 		var callslice []int
@@ -362,9 +361,9 @@ func (target *Target) GenerateRandomWTFIDF(rs rand.Source, ncalls int, ct *Choic
 	s := newState(target, ct, nil)
 	ngragh := r.GenGraphTFIDF(rs, ncalls/2+1, ct, callpus)
 	calls := GenFromGraph(ngragh)
-	//target.InitTargetSeqPoll(calls, *ngragh)	//没有后续处理，毫无意义的函数
+	//target.InitTargetSeqPoll(calls, *ngragh)	
 	//for _,call:=range calls {
-	call := calls[0] //先实验一波
+	call := calls[0] 
 	for _, item := range call {
 		idx := ngragh.IDmap[item]
 		meta := s.target.Syscalls[idx]
@@ -388,7 +387,7 @@ func (r *randGen) GenGraphTFIDF(rs rand.Source, ncalls int, ct *ChoiceTable, cal
 		IDmap: make(map[int]int),
 		Graph: make([][]int, ncalls),
 	}
-	choose, _, _ := r.ChooseOneTFIDF(rs, globalVisit, ct, true, callpus) //选择第一个调用
+	choose, _, _ := r.ChooseOneTFIDF(rs, globalVisit, ct, true, callpus) 
 	globalVisit = append(globalVisit, choose)
 	ngraph.Graph[0] = make([]int, ncalls)
 	ngraph.IDmap[0] = choose
@@ -399,7 +398,7 @@ func (r *randGen) GenGraphTFIDF(rs rand.Source, ncalls int, ct *ChoiceTable, cal
 		choose, dir, before = r.ChooseOneTFIDF(rs, globalVisit, ct, false, callpus)
 		globalVisit = append(globalVisit, choose)
 		ngraph.IDmap[i] = choose
-		if dir == 0 { //向后扩展了一个调用，开辟该调用的空间
+		if dir == 0 { 
 			ngraph.Graph[i] = make([]int, ncalls)
 		}
 		AppendGraph(ngraph, before, i, dir, ncalls)
@@ -411,13 +410,13 @@ func (r *randGen) GenGraphTFIDF(rs rand.Source, ncalls int, ct *ChoiceTable, cal
 func (r *randGen) ChooseOneTFIDF(rs rand.Source, globalVisit []int, ct *ChoiceTable, isFirst bool, callpus *tfidf.TFIDF) (id int, dir int, bias int) {
 	Prope, Fre := r.BuildTwoGramTable()
 
-	if isFirst { //选首个调用，选取随机值
-		//x := rand.Intn(len(ct.runs)) //不能随机选，会遇到None generatable的调用
+	if isFirst { 
+		//x := rand.Intn(len(ct.runs)) 
 		x := ct.calls[r.Intn(len(ct.calls))].ID
 		return x, 0, -1
 
-	} else { //其他位置调用
-		rd := r.Intn(2) //随机数选前面还是后面TODO:maybe need a change!!!!!//20230306更改
+	} else { 
+		rd := r.Intn(2) 
 		var s []string
 		for i := 0; i < len(globalVisit); i++ {
 			s = append(s, strconv.Itoa(globalVisit[i]))
@@ -430,9 +429,8 @@ func (r *randGen) ChooseOneTFIDF(rs rand.Source, globalVisit []int, ct *ChoiceTa
 
 		biasIndex := chooseIndexFromMap(r.Rand, tfidfval, globalVisit)
 		bias := globalVisit[biasIndex]
-		//1选前向
 		if rd == 1 {
-			if key := ct.NgramChooseFront(r.Rand, Fre, globalVisit, bias); (key != -1) && ct.Generatable(key) { //在N-gram表中没有该项
+			if key := ct.NgramChooseFront(r.Rand, Fre, globalVisit, bias); (key != -1) && ct.Generatable(key) { 
 				return key, rd, biasIndex
 			} else if key2 := ct.chooseFront(r.Rand, globalVisit, bias); (key2 != -1) && ct.Generatable(key2) {
 				return key2, rd, biasIndex
@@ -482,7 +480,7 @@ func chooseIndexFromMap(r *rand.Rand, m map[string]float64, g []int) int {
 // ===================================================================================================
 // Base Function Retated to GenGraph
 
-type Pair struct { //这个结构体用于根据map的value值排序map
+type Pair struct { 
 	Key   int
 	Value int
 }
@@ -536,12 +534,12 @@ func GenFromGraph(ngraph *NGraph) [][]int {
 	return TopoSortSimple(ngraph.Graph)
 }
 
-func AppendGraph(ngraph *NGraph, before int, choose int, dir int, ncalls int) { //扩展选择的子图
+func AppendGraph(ngraph *NGraph, before int, choose int, dir int, ncalls int) { 
 	if dir == 1 {
-		ngraph.Graph[choose] = make([]int, ncalls) //如果是选前向，需要开辟数组
-		ngraph.Graph[choose][before] = 1           //choose后是before
+		ngraph.Graph[choose] = make([]int, ncalls) 
+		ngraph.Graph[choose][before] = 1           
 	} else {
-		ngraph.Graph[before][choose] = 1 //before后是choose
+		ngraph.Graph[before][choose] = 1 
 	}
 }
 
