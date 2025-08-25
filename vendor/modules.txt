@@ -133,6 +133,11 @@ github.com/GaijinEntertainment/go-exhaustruct/v3/analyzer
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/comment
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/pattern
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/structure
+# github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
+## explicit; go 1.18
+github.com/Junjie-Fan/tfidf
+github.com/Junjie-Fan/tfidf/seg
+github.com/Junjie-Fan/tfidf/util
 # github.com/Masterminds/semver v1.5.0
 ## explicit
 github.com/Masterminds/semver
@@ -479,7 +484,7 @@ github.com/golangci/revgrep
 # github.com/golangci/unconvert v0.0.0-20240309020433-c5143eacb3ed
 ## explicit; go 1.20
 github.com/golangci/unconvert
-# github.com/google/flatbuffers v24.3.25+incompatible
+# github.com/google/flatbuffers v25.2.10+incompatible
 ## explicit
 github.com/google/flatbuffers/go
 # github.com/google/generative-ai-go v0.13.0
