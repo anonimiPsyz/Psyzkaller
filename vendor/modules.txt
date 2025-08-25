@@ -133,6 +133,11 @@ github.com/GaijinEntertainment/go-exhaustruct/v3/analyzer
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/comment
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/pattern
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/structure
+# github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
+## explicit; go 1.18
+github.com/Junjie-Fan/tfidf
+github.com/Junjie-Fan/tfidf/seg
+github.com/Junjie-Fan/tfidf/util
 # github.com/Masterminds/semver v1.5.0
 ## explicit
 github.com/Masterminds/semver
@@ -1244,7 +1249,7 @@ google.golang.org/api/transport
 google.golang.org/api/transport/grpc
 google.golang.org/api/transport/http
 google.golang.org/api/transport/http/internal/propagation
-# google.golang.org/appengine/v2 v2.0.5
+# google.golang.org/appengine/v2 v2.0.6
 ## explicit; go 1.11
 google.golang.org/appengine/v2
 google.golang.org/appengine/v2/aetest
