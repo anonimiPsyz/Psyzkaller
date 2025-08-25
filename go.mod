@@ -12,10 +12,11 @@ require (
 	cloud.google.com/go/secretmanager v1.13.1
 	cloud.google.com/go/spanner v1.60.0
 	cloud.google.com/go/storage v1.40.0
+	github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
 	github.com/VividCortex/gohistogram v1.0.0
 	github.com/dvyukov/go-fuzz v0.0.0-20220726122315-1d375ef9f9f6
 	github.com/golangci/golangci-lint v1.57.2
-	github.com/google/flatbuffers v24.3.25+incompatible
+	github.com/google/flatbuffers v25.2.10+incompatible
 	github.com/google/generative-ai-go v0.13.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
