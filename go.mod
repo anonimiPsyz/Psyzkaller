@@ -12,6 +12,7 @@ require (
 	cloud.google.com/go/secretmanager v1.13.1
 	cloud.google.com/go/spanner v1.60.0
 	cloud.google.com/go/storage v1.40.0
+	github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
 	github.com/VividCortex/gohistogram v1.0.0
 	github.com/dvyukov/go-fuzz v0.0.0-20220726122315-1d375ef9f9f6
 	github.com/golangci/golangci-lint v1.57.2
@@ -24,7 +25,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/sergi/go-diff v1.3.1
 	github.com/stretchr/testify v1.9.0
-	github.com/ulikunitz/xz v0.5.12
+	github.com/ulikunitz/xz v0.5.13
 	github.com/vektra/mockery/v2 v2.40.3
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
 	golang.org/x/oauth2 v0.21.0
