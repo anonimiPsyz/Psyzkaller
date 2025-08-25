@@ -18,7 +18,7 @@ Psyzkaller is an advanced kernel fuzzing framework that extends Google's Syzkall
 ## Quick Start
 ```
 # Clone the repository
-git clone https://github.com/xxxxxx/Psyzkaller.git
+git clone https://github.com/anonimiPsyz/Psyzkaller.git
 
 # Build Psyzkaller
 cd Psyzkaller
@@ -36,7 +36,6 @@ Psyzkaller uses the same configuration file as syzkaller.  [Example](https://git
         N: enable psyzkaller's N-gram optimization.
         R: enable psyzkaller's random Walk optimization.
         D: enable psyzkaller's DongTing optimization. Need successor_Prope.json in workdir.
-        S: enable psyzkaller's DongTing optimization Special. Need successor_Prope.json in workdir. The syscall infomation is in Syzkaller's type.(Not Linux's original syscalls)
         e.g. psyzMode=DN  : means enable DongTing and N-gram optimizations. 
         default: no optimization.
 -DTJson string
