@@ -25,7 +25,7 @@ cd Psyzkaller
 make
 
 # Configure and run (see config examples in config/ directory)
-./bin/syz-manager -psyzMode=NTD -DTJson=successor_Prope.json -config=my.cfg 
+./bin/syz-manager -psyzMode=NTD -DTJson=nor1vabn1.json -config=psyzkaller.cfg 
 ```
 
 Psyzkaller uses the same configuration file as syzkaller.  [Example](https://github.com/google/syzkaller/blob/master/pkg/mgrconfig/testdata/qemu-example.cfg)
