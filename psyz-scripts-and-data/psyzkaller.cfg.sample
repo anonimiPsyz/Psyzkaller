@@ -1,0 +1,31 @@
+{
+        "target": "linux/amd64",
+        "http": "127.0.0.1:62080",  #change to your useable port
+
+        # Workdir can be in whatever folder, keeping it in the checkout is just most convenient.
+        "workdir": "./testdata/syzkaller/workdir",  
+
+        #!!Replace /linux with the path to the kernel checkout.
+        #!!The kernel must be already built.
+        # Here are the kernel config options that facilitate fuzzing: https://github.com/google/syzkaller/blob/master/docs/linux/kernel_configs.md
+        # In experiments, we tested kernel Linux-6.12/Linux-6.1/Linux-5.19
+	"kernel_obj": "/linux",
+
+        #!!Replace with the path to the disk image file. We use a Debian 11 image.
+        "image": "./testdata/bullseye.img",
+        "sshkey": "./testdata/bullseye.id_rsa",
+
+        #!!Replace with the path to the Psyzkaller checkout.
+        "syzkaller": "./testdata/Psyzkaller"",
+        "procs": 8,
+        "type": "qemu",
+	"reproduce": false,
+        "vm": {
+                "count": 4,
+                #!!Replace with the path to the kernel image.
+		"kernel": "/linux/arch/x86/boot/bzImage",
+                "cpu": 2,
+		"cmdline": "net.ifnames=0",
+                "mem": 2048
+        }
+}
