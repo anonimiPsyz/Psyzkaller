@@ -133,6 +133,11 @@ github.com/GaijinEntertainment/go-exhaustruct/v3/analyzer
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/comment
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/pattern
 github.com/GaijinEntertainment/go-exhaustruct/v3/internal/structure
+# github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
+## explicit; go 1.18
+github.com/Junjie-Fan/tfidf
+github.com/Junjie-Fan/tfidf/seg
+github.com/Junjie-Fan/tfidf/util
 # github.com/Masterminds/semver v1.5.0
 ## explicit
 github.com/Masterminds/semver
@@ -1103,8 +1108,8 @@ golang.org/x/oauth2/jwt
 golang.org/x/perf/benchstat
 golang.org/x/perf/internal/stats
 golang.org/x/perf/storage/benchfmt
-# golang.org/x/sync v0.7.0
-## explicit; go 1.18
+# golang.org/x/sync v0.16.0
+## explicit; go 1.23.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
 # golang.org/x/sys v0.21.0
