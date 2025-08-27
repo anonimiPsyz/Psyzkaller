@@ -16,19 +16,26 @@ Psyzkaller is an advanced kernel fuzzing framework that extends Google's Syzkall
 - Superior Vulnerability Detection: Identifies 110.4%-187.2% more kernel crashes and discovered 8 previously unknown vulnerabilities (vs Syzkaller's 1)
 
 ## Quick Start
+We have successfully deployed Psyzkaller on Ubuntu 22.04 and 20.04. The setup process is straightforward:
 ```
-# Clone the repository
-git clone https://github.com/anonimiPsyz/Psyzkaller.git
+# Install Go toolchain (required for building Psyzkaller)
+wget https://dl.google.com/go/go1.21.4.linux-amd64.tar.gz
+tar -xf go1.21.4.linux-amd64.tar.gz
+export GOROOT=`pwd`/go
+export PATH=$GOROOT/bin:$PATH
 
-# Build Psyzkaller
+# Clone and build Psyzkaller
+git clone https://github.com/anonimiPsyz/Psyzkaller.git
 cd Psyzkaller
 make
-
-# Configure and run (see config examples in config/ directory)
+```
+For complete environment setup instructions, including kernel compilation and disk image creation, please refer to the detailed guide in [setup.md](https://github.com/anonimiPsyz/Psyzkaller/blob/anonimize/docs/linux/setup.md).
+Psyzkaller maintains full compatibility with standard syzkaller configuration files. See this [example configuration](https://github.com/anonimiPsyz/Psyzkaller/blob/anonimize/psyz-scripts-and-data/psyzkaller.cfg.sample) for reference.
+To run Psyzkaller with N-gram mode:
+``` 
 ./bin/syz-manager -psyzMode=NTD -DTJson=nor1vabn1.json -config=psyzkaller.cfg 
 ```
-
-Psyzkaller uses the same configuration file as syzkaller.  [Example](https://github.com/google/syzkaller/blob/master/pkg/mgrconfig/testdata/qemu-example.cfg)
+Pre-trained N-gram models and configuration templates are available in the [psyz-scripts-and-data](https://github.com/anonimiPsyz/Psyzkaller/tree/anonimize/psyz-scripts-and-data) directory.
 
 ```
 -psyzMode string
