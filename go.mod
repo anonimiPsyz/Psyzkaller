@@ -12,6 +12,7 @@ require (
 	cloud.google.com/go/secretmanager v1.13.1
 	cloud.google.com/go/spanner v1.60.0
 	cloud.google.com/go/storage v1.40.0
+	github.com/Junjie-Fan/tfidf v0.0.0-20230207114919-b1374c0fb08d
 	github.com/VividCortex/gohistogram v1.0.0
 	github.com/dvyukov/go-fuzz v0.0.0-20220726122315-1d375ef9f9f6
 	github.com/golangci/golangci-lint v1.57.2
@@ -33,7 +34,7 @@ require (
 	golang.org/x/sys v0.21.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 	google.golang.org/api v0.182.0
-	google.golang.org/appengine/v2 v2.0.5
+	google.golang.org/appengine/v2 v2.0.6
 	google.golang.org/genproto v0.0.0-20240401170217-c3f982113cda
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v3 v3.0.1
